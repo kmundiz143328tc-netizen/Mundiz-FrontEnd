@@ -1,82 +1,95 @@
-import { useState, useEffect } from 'react';
-import {
-    PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+import { useEffect, useState } from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import api from '../../services/api';
 
 const COLORS = [
-    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#14b8a6',
-    '#a855f7', '#6366f1', '#fb923c', '#22d3ee', '#4ade80',
-    '#fbbf24', '#f43f5e', '#0ea5e9', '#d946ef', '#34d399',
+  '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899',
+  '#f43f5e', '#f97316', '#eab308', '#22c55e',
+  '#14b8a6', '#06b6d4', '#0ea5e9', '#a855f7',
 ];
 
-const RADIAN = Math.PI / 180;
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    if (percent < 0.04) return null;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    return (
-        <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="bold">
-            {`${(percent * 100).toFixed(0)}%`}
-        </text>
-    );
+const CustomTooltip = ({ active, payload, darkMode }) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0];
+  const total = d.payload.total;
+  const pct = total ? ((d.value / total) * 100).toFixed(1) : 0;
+  return (
+    <div className={`px-4 py-3 rounded-xl shadow-xl text-sm border
+      ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'}`}>
+      <p className="font-bold mb-1">{d.payload.label || d.name}</p>
+      <p style={{ color: d.payload.fill }} className="font-semibold">👩‍🎓 {d.value} students</p>
+      <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pct}% of total</p>
+    </div>
+  );
 };
 
-const CourseDistributionChart = () => {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+const CustomLegend = ({ data, darkMode }) => (
+  <div className="flex flex-col gap-1.5 mt-2 max-h-28 overflow-y-auto pr-1">
+    {data.map((d, i) => (
+      <div key={i} className="flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+        <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          {d.name} <span className="font-semibold">({d.value})</span>
+        </span>
+      </div>
+    ))}
+  </div>
+);
 
-    useEffect(() => {
-        api.get('/dashboard/course-distribution')
-            .then(res => setData(res.data))
-            .catch(() => setError('Failed to load course data'))
-            .finally(() => setLoading(false));
-    }, []);
+const CourseDistributionChart = ({ darkMode }) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    if (loading) return (
-        <div className="h-64 flex items-center justify-center">
-            <div className="animate-pulse text-gray-400">Loading chart...</div>
-        </div>
-    );
+  useEffect(() => {
+    api.get('/dashboard/course-distribution')
+      .then(r => {
+        const total = r.data.reduce((s, d) => s + d.value, 0);
+        setData(r.data.map(d => ({ ...d, total })));
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-    if (error) return (
-        <div className="h-64 flex items-center justify-center text-red-500 text-sm">{error}</div>
-    );
+  if (loading) return (
+    <div className="flex items-center justify-center h-48">
+      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
-    return (
-        <ResponsiveContainer width="100%" height={320}>
+  if (!data.length) return (
+    <div className={`flex items-center justify-center h-48 text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+      No course data yet
+    </div>
+  );
+
+  const pieData = data.map((d, i) => ({ ...d, fill: COLORS[i % COLORS.length] }));
+  const total = data.reduce((s, d) => s + d.value, 0);
+
+  return (
+    <div>
+      <p className={`text-xs mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        🥧 Each slice = students enrolled in that course
+      </p>
+      <div className="flex flex-col sm:flex-row gap-2 items-center">
+        <div className="w-full sm:w-48 shrink-0">
+          <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-                <Pie
-                    data={data}
-                    cx="50%"
-                    cy="45%"
-                    outerRadius={110}
-                    labelLine={false}
-                    label={renderCustomLabel}
-                    dataKey="value"
-                    nameKey="name"
-                >
-                    {data.map((_, index) => (
-                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                </Pie>
-                <Tooltip
-                    contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value, name) => [`${value} students`, name]}
-                />
-                <Legend
-                    formatter={(value, entry) => (
-                        <span style={{ fontSize: '11px', color: '#374151' }}>
-                            {entry.payload.label || value}
-                        </span>
-                    )}
-                />
+              <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75}
+                paddingAngle={3} dataKey="value" strokeWidth={0}>
+                {pieData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              </Pie>
+              <Tooltip content={<CustomTooltip darkMode={darkMode} />} />
             </PieChart>
-        </ResponsiveContainer>
-    );
+          </ResponsiveContainer>
+          {/* Center label */}
+          <p className={`text-center -mt-2 text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            {total} total
+          </p>
+        </div>
+        <CustomLegend data={pieData} darkMode={darkMode} />
+      </div>
+    </div>
+  );
 };
 
 export default CourseDistributionChart;

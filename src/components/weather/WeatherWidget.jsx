@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getCurrentWeather, getForecast, getWeatherByCoords, getIconUrl } from '../../services/weatherApi';
 import ForecastDisplay from './ForecastDisplay';
 
-const WeatherWidget = () => {
+const WeatherWidget = ({ darkMode = false }) => {
     const [weather, setWeather] = useState(null);
     const [forecast, setForecast] = useState([]);
     const [city, setCity] = useState('Davao City');
@@ -88,45 +88,45 @@ const WeatherWidget = () => {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl shadow-md p-4">
-                <form onSubmit={handleSearch} className="flex gap-3">
+        <div className="space-y-4">
+            {/* Search Bar — responsive */}
+            <div className={`rounded-2xl shadow-sm p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Search city (e.g. Manila, Cebu City)..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Search city (e.g. Manila, Cebu)..."
+                        className={`flex-1 px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition
+              ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
                     />
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition"
-                    >
-                        🔍 Search
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleGeoLocation}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition"
-                        title="Use my location"
-                    >
-                        📍 My Location
-                    </button>
+                    <div className="flex gap-2">
+                        <button type="submit"
+                            className="flex-1 sm:flex-none px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition">
+                            🔍 Search
+                        </button>
+                        <button type="button" onClick={handleGeoLocation}
+                            title="Use my location"
+                            className="flex-1 sm:flex-none px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition">
+                            📍 <span className="hidden sm:inline">My Location</span><span className="sm:hidden">My Location</span>
+                        </button>
+                    </div>
                 </form>
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                    {error}
+                <div className={`p-4 rounded-xl text-sm border
+          ${darkMode ? 'bg-red-900/20 border-red-700 text-red-400' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                    ⚠️ {error}
                 </div>
             )}
 
             {loading && (
-                <div className="bg-white rounded-xl shadow-md p-12 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
+                <div className={`rounded-2xl shadow-sm p-12 flex items-center justify-center
+          ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <div className="text-center">
                         <div className="animate-spin text-4xl mb-2">🌀</div>
-                        <p>Fetching weather...</p>
+                        <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Fetching weather...</p>
                     </div>
                 </div>
             )}
