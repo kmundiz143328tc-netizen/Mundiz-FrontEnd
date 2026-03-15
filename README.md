@@ -18,3 +18,26 @@ npm run dev
 
 ## App URL
 http://localhost:5173
+
+## Technologies Used
+
+### Frontend
+- React 18
+- Vite
+- Tailwind CSS 3
+- React Router DOM 6
+- Recharts
+- Axios
+
+### Backend
+- Laravel 12
+- PHP 8.5
+- Laravel Sanctum
+- MySQL
+
+### Tools
+- Git & GitHub
+- Laragon
+- Node.js
+- Composer
+```
